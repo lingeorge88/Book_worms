@@ -29,9 +29,9 @@ Book Worms is a full-stack MERN application that allows users to search for any 
 - [Description](#description)
 - [Table of Contents](#table-of-contents)
 - [Usage](#usage)
+- [Dependencies](#dependencies)
 - [Testing](#testing)
 - [Contributing](#contributing)
-- [Future Developments](#future-developments)
 - [Questions](#questions)
 
 # Getting Started 🛫🚀
