@@ -4,8 +4,6 @@ export const searchGoogleBooks = (query) => {
   return fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
 };
 
-const API_KEY='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';
-
 export const APIBody =() => {
   const randomPhrases = [
     "Suggest me a random book that you haven't mentioned before.",
