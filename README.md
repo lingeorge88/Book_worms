@@ -68,6 +68,10 @@ The user can search for more books by clicking the "Search for books" button or 
 ## Deployment
 - Heroku
 - MongoDB Atlas
+
+## Version History
+-1.5 Implemented feature that recommends books to users!
+-1.0 inital Release
 # Testing 🧪 
 
 No testing is currently set up 
