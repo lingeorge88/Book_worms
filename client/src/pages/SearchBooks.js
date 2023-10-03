@@ -7,12 +7,12 @@ import {
   Card,
   Row
 } from 'react-bootstrap';
-
 import Auth from '../utils/auth';
-import { saveBook, searchGoogleBooks } from '../utils/API';
+import { searchGoogleBooks} from '../utils/API';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import { useMutation } from '@apollo/client';
 import { SAVE_BOOK } from '../utils/mutations';
+const apiKey = process.env.REACT_APP_OPEN_API_KEY;
 
 const SearchBooks = () => {
   // create state for holding returned google api data
@@ -24,45 +24,113 @@ const SearchBooks = () => {
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
   const [saveBook] = useMutation(SAVE_BOOK);
-
+  const [recommend, setRecommend] = useState('');
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
+ 
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
   });
+  useEffect(() => {
+   console.log(recommend);
+  }, [recommend]);
 
+
+  const APIBody =() => {
+    const randomPhrases = [
+      "Suggest me a random book that you haven't mentioned before.",
+      "Can you recommend a unique book for me?",
+      "I'm looking for a random book suggestion.",
+      "Tell me about a book I might enjoy."
+    ];
+    
+    const randomMessage = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
+    return{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that suggests books."
+        },
+        {
+            "role": "user",
+            "content": randomMessage
+        }
+    ],
+    "temperature": 1.0,
+    "max_tokens": 60,
+    "top_p": 0.9,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0
+  }
+  } 
+  function extractTitle(message) {
+    // Match text between double quotes
+    const regex = /"([^"]+)"/;
+    const match = message.match(regex);
+    
+    if (match && match[1]) {
+      return match[1]; // This is the extracted title
+    } else {
+      return null; // or some default value or error handling
+    }
+  }
+  
+  
+async function callOpenAIAPI() {
+    const body = APIBody();
+    await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body:JSON.stringify(body)
+    }).then((data)=>{
+      console.log("API Response:", data);
+    return data.json();
+    }).then((data) => {
+      const recommendedTitle = extractTitle(data.choices[0].message.content);
+      setRecommend(recommendedTitle);
+      searchBooks(recommend);
+    })
+   }
   // create method to search for books and set state on form submit
-  const handleFormSubmit = async (event) => {
+  const searchBooks = async (query) => {
+    try {
+        const response = await searchGoogleBooks(query);
+
+        if (!response.ok) {
+            throw new Error('something went wrong!');
+        }
+
+        const { items } = await response.json();
+
+        const bookData = items.map((book) => ({
+            bookId: book.id,
+            authors: book.volumeInfo.authors || ['No author to display'],
+            title: book.volumeInfo.title,
+            description: book.volumeInfo.description,
+            image: book.volumeInfo.imageLinks?.thumbnail || '',
+            link: book.volumeInfo.infoLink
+        }));
+
+        setSearchedBooks(bookData);
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleFormSubmit = async (event) => {
     event.preventDefault();
 
     if (!searchInput) {
-      return false;
+        return false;
     }
 
-    try {
-      const response = await searchGoogleBooks(searchInput);
-
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
-
-      const { items } = await response.json();
-
-      const bookData = items.map((book) => ({
-        bookId: book.id,
-        authors: book.volumeInfo.authors || ['No author to display'],
-        title: book.volumeInfo.title,
-        description: book.volumeInfo.description,
-        image: book.volumeInfo.imageLinks?.thumbnail || '',
-        link: book.volumeInfo.infoLink
-      }));
-
-      setSearchedBooks(bookData);
-      setSearchInput('');
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    await searchBooks(searchInput);
+    setSearchInput('');
+};
 
   // create function to handle saving a book to our database
   const handleSaveBook = async (bookId) => {
@@ -105,8 +173,11 @@ const SearchBooks = () => {
                 />
               </Col>
               <Col xs={12} md={4}>
-                <Button type='submit' variant='success' size='lg'>
+                <Button type='submit' variant='success' size='lg' className='sm: mt-2'>
                   Submit Search
+                </Button>
+                <Button onClick={callOpenAIAPI} variant='primary' size='lg' className='mt-2'>
+                  Recommend me a Book!
                 </Button>
               </Col>
             </Row>
@@ -124,7 +195,7 @@ const SearchBooks = () => {
           {searchedBooks.map((book) => {
             return (
               <Col md="4">
-                <Card key={book.bookId} border='dark'>
+                <Card key={book.bookId || `no ID + ${Date.now()}`} border='dark'>
                   {book.image ? (
                     <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
                   ) : null}

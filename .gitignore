@@ -3,4 +3,5 @@
 /server/node_modules
 DS_Store
 /temp
-/server/.env
+/server/
+.env
