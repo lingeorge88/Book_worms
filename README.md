@@ -1,6 +1,3 @@
-
-
-
 <h1 align="center">📗📘 📙 Book Worms 🐛 🐝 🐞 </h1>
 
 <p align="center">
@@ -71,7 +68,7 @@ The user can search for more books by clicking the "Search for books" button or 
 
 ## Version History
 - 1.5 Implemented feature that recommends books to users!
-- 
+- ![Screenshot](./assets/Recommend.png)
 - 1.0 inital Release
 
 # Testing 🧪 
